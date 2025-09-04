@@ -1,0 +1,767 @@
+{
+  "atracker": {
+    "collector_bucket_name": "atracker-bucket",
+    "receive_global_events": true,
+    "resource_group": "lab02-service-rg",
+    "add_route": true
+  },    
+  "cos": [
+    {
+      "buckets": [
+        {
+          "endpoint_type": "public",
+          "kms_key": "lab02-slz-key",
+          "force_delete": true,
+          "name": "management-flowlogs",
+          "storage_class": "standard",
+          "expire_rule": {
+            "rule_id": "fl-bucket-expire-30",
+            "enable": true,
+            "days": 30,
+            "prefix": "ibm_vpc_flowlogs_v1/"
+          }            
+        },
+        {
+          "endpoint_type": "public",
+          "kms_key": "lab02-slz-key",
+          "force_delete": true,
+          "name": "workload-flowlogs",
+          "storage_class": "standard",
+          "expire_rule": {
+            "rule_id": "fl-bucket-expire-30",
+            "enable": true,
+            "days": 30,
+            "prefix": "ibm_vpc_flowlogs_v1/"
+          }            
+        },
+        {
+          "endpoint_type": "public",
+          "force_delete": true,
+          "kms_key": "lab02-atracker-key",
+          "name": "atracker-bucket",
+          "storage_class": "standard",
+          "expire_rule": {
+            "rule_id": "a-bucket-expire-rule-30",
+            "enable": true,
+            "days": 30,
+            "prefix": "logs/"
+          }
+        }        
+      ],
+      "keys": [
+        {
+          "name": "flowlogs-cos-bind-key",
+          "role": "Writer",
+          "enable_HMAC": true
+        },
+        {
+          "name": "flowlogs-cos-bind-reader-key",
+          "role": "Reader",
+          "enable_HMAC": true
+        }
+      ],
+      "name": "audit-flowlogs-cos",
+      "plan": "standard",
+      "random_suffix": true,
+      "resource_group": "lab02-service-rg",
+      "use_data": false
+    },
+    {
+      "buckets": [
+        {
+          "endpoint_type": "public",
+          "kms_key": "lab02-slz-key",
+          "force_delete": true,
+          "name": "workload-data",
+          "storage_class": "standard"
+        }
+      ],
+      "keys": [
+        {
+          "name": "workload-data-cos-bind-key",
+          "role": "Writer",
+          "enable_HMAC": true
+        },
+        {
+          "name": "workload-data-cos-bind-reader-key",
+          "role": "Reader",
+          "enable_HMAC": true
+        }
+      ],
+      "name": "workload-data-cos",
+      "plan": "standard",
+      "random_suffix": true,
+      "resource_group": "lab02-workload-rg",
+      "use_data": false
+    }
+  ],
+  "resource_groups": [
+    {
+      "create": true,
+      "name": "lab02-workload-rg"
+    },
+    {
+      "create": true,
+      "name": "lab02-management-rg"
+    },
+    {
+      "create": true,
+      "name": "lab02-service-rg"
+    }
+  ],
+  "security_groups": [
+    {
+      "name": "lab02-workload-vpe-sg",
+      "resource_group": "lab02-workload-rg",
+      "rules": [
+        {
+          "direction": "inbound",
+          "name": "allow-ibm-inbound",
+          "source": "161.26.0.0/16"
+        },
+        {
+          "direction": "inbound",
+          "name": "allow-vpc-inbound",
+          "source": "10.0.0.0/8"
+        },
+        {
+          "direction": "outbound",
+          "name": "allow-vpc-outbound",
+          "source": "10.0.0.0/8"
+        },
+        {
+          "direction": "outbound",
+          "name": "allow-ibm-cse-outbound",
+          "source": "161.26.0.0/16"
+        },
+        {
+          "direction": "outbound",
+          "name": "allow-cloud-services-outbound",
+          "source": "166.9.0.0/16"
+        }
+      ],
+      "vpc_name": "workload"
+    },
+    {
+      "name": "lab02-workload-vsi",
+      "resource_group": "lab02-workload-rg",
+      "rules": [
+        {
+          "direction": "inbound",
+          "name": "allow-ibm-inbound",
+          "source": "161.26.0.0/16"
+        },
+        {
+          "direction": "inbound",
+          "name": "allow-ssh-inbound",
+          "source": "10.21.30.0/23",
+          "tcp": {
+            "port_min": 22,
+            "port_max": 22
+          }
+        },
+        {
+          "direction": "outbound",
+          "name": "allow-vpc-outbound",
+          "source": "10.0.0.0/8"
+        },
+        {
+          "direction": "outbound",
+          "name": "allow-ibm-cse-outbound",
+          "source": "161.26.0.0/16"
+        },
+        {
+          "direction": "outbound",
+          "name": "allow-cloud-services-outbound",
+          "source": "166.9.0.0/16"
+        },
+        {
+          "direction": "outbound",
+          "name": "allow-https-outbound",
+          "source": "0.0.0.0/0",
+          "tcp": {
+            "port_min": 443,
+            "port_max": 443
+          }
+        }
+      ],
+      "vpc_name": "workload"
+    },
+    {
+      "name": "lab02-management-bastion",
+      "resource_group": "lab02-management-rg",
+      "rules": [
+        {
+          "direction": "inbound",
+          "name": "allow-ibm-inbound",
+          "source": "161.26.0.0/16"
+        },
+        {
+          "direction": "inbound",
+          "name": "allow-ssh-inbound-cloud",
+          "source": "10.0.0.0/8",
+          "tcp": {
+            "port_min": 22,
+            "port_max": 22
+          }
+        },
+        {
+          "direction": "inbound",
+          "name": "allow-ssh-inbound-cloudshell-dal-10-1",
+          "source": "169.46.0.0/16",
+          "tcp": {
+            "port_min": 22,
+            "port_max": 22
+          }
+        },
+        {
+          "direction": "inbound",
+          "name": "allow-ssh-inbound-cloudshell-dal-12-1",
+          "source": "169.48.0.0/16",
+          "tcp": {
+            "port_min": 22,
+            "port_max": 22
+          }
+        },
+        {
+          "direction": "inbound",
+          "name": "allow-ssh-inbound-cloudshell-dal-13-1",
+          "source": "67.228.0.0/16",
+          "tcp": {
+            "port_min": 22,
+            "port_max": 22
+          }
+        },         
+        {
+          "direction": "outbound",
+          "name": "allow-vpc-outbound",
+          "source": "10.0.0.0/8"
+        },
+        {
+          "direction": "outbound",
+          "name": "allow-ibm-cse-outbound",
+          "source": "161.26.0.0/16"
+        },
+        {
+          "direction": "outbound",
+          "name": "allow-cloud-services-outbound",
+          "source": "166.9.0.0/16"
+        }
+      ],
+      "vpc_name": "management"
+    },      
+    {
+      "name": "lab02-management-c2svpn",
+      "resource_group": "lab02-management-rg",
+      "rules": [
+        {
+          "direction": "inbound",
+          "name": "allow-vpn-inbound",
+          "source": "0.0.0.0/0",
+          "udp": {
+            "port_min": 443,
+            "port_max": 443
+          }
+        },
+        {
+          "direction": "outbound",
+          "name": "allow-vpc-outbound",
+          "source": "10.0.0.0/8"
+        },
+        {
+          "direction": "outbound",
+          "name": "allow-ibm-cse-outbound",
+          "source": "161.26.0.0/16"
+        },
+        {
+          "direction": "outbound",
+          "name": "allow-cloud-services-outbound",
+          "source": "166.9.0.0/16"
+        }
+      ],
+      "vpc_name": "management"
+    }
+  ],
+  "service_endpoints": "private",
+  "enable_transit_gateway": true,
+  "transit_gateway_resource_group": "lab02-workload-rg",
+  "transit_gateway_connections": [
+    "workload",
+    "management"
+  ],
+  "virtual_private_endpoints": [
+    {
+      "service_name": "workload-data-cos",
+      "service_type": "cloud-object-storage",
+      "resource_group": "lab02-workload-rg",
+      "vpcs": [
+        {
+          "name": "management",
+          "subnets": [
+            "vpe-zone-1",
+            "vpe-zone-2"
+          ]
+        },
+        {
+          "name": "workload",
+          "subnets": [
+            "vpe-zone-1",
+            "vpe-zone-2"
+          ]
+        }
+      ]
+    }
+  ],
+  "vpcs": [
+    {
+      "address_prefixes": {
+        "zone-1": [],
+        "zone-2": [],
+        "zone-3": []
+      },
+      "clean_default_sg_acl": true,
+      "flow_logs_bucket_name": "management-flowlogs",
+      "default_network_acl_name": "lab02-management-default-acl",
+      "default_security_group_name": "lab02-management-default-sg",
+      "default_security_group_rules": [],
+      "network_acls": [
+        {
+          "add_cluster_rules": false,
+          "name": "management-acl",
+          "rules": [
+            {
+              "action": "allow",
+              "destination": "10.0.0.0/8",
+              "direction": "inbound",
+              "name": "allow-all-cse-inbound",
+              "source": "161.26.0.0/16"
+            },
+            {
+              "action": "allow",
+              "destination": "10.0.0.0/8",
+              "direction": "inbound",
+              "name": "allow-cloud-services-inbound",
+              "source": "166.9.0.0/16"
+            },
+            {
+              "action": "allow",
+              "destination": "10.0.0.0/8",
+              "direction": "inbound",
+              "name": "allow-all-vpc-inbound",
+              "source": "10.0.0.0/8"
+            },
+            {
+              "action": "allow",
+              "destination": "10.0.0.0/8",
+              "direction": "outbound",
+              "name": "allow-all-vpc-outbound",
+              "source": "10.0.0.0/8"
+            },
+            {
+              "action": "allow",
+              "destination": "161.26.0.0/16",
+              "direction": "outbound",
+              "name": "allow-all-cse-outbound",
+              "source": "10.0.0.0/8"
+            },
+            {
+              "action": "allow",
+              "destination": "166.9.0.0/16",
+              "direction": "outbound",
+              "name": "allow-cloud-services-outbound",
+              "source": "10.0.0.0/8"
+            }
+          ]
+        },
+        {
+          "add_cluster_rules": false,
+          "name": "management-bastion-acl",
+          "rules": [
+            {
+              "action": "allow",
+              "destination": "10.0.0.0/8",
+              "direction": "inbound",
+              "name": "allow-all-cse-inbound",
+              "source": "161.26.0.0/16"
+            },
+            {
+              "action": "allow",
+              "destination": "10.0.0.0/8",
+              "direction": "inbound",
+              "name": "allow-cloud-services-inbound",
+              "source": "166.9.0.0/16"
+            },
+            {
+              "action": "allow",
+              "destination": "10.0.0.0/8",
+              "direction": "inbound",
+              "name": "allow-all-vpc-inbound",
+              "source": "10.0.0.0/8"
+            },
+            {
+              "action": "allow",
+              "destination": "10.0.0.0/8",
+              "direction": "outbound",
+              "name": "allow-all-vpc-outbound",
+              "source": "10.0.0.0/8"
+            },
+            {
+              "action": "allow",
+              "destination": "161.26.0.0/16",
+              "direction": "outbound",
+              "name": "allow-all-cse-outbound",
+              "source": "10.0.0.0/8"
+            },
+            {
+              "action": "allow",
+              "destination": "166.9.0.0/16",
+              "direction": "outbound",
+              "name": "allow-cloud-services-outbound",
+              "source": "10.0.0.0/8"
+            },
+            {
+              "action": "allow",
+              "destination": "0.0.0.0/0",
+              "direction": "outbound",
+              "name": "allow-ssh-resp-outbound",
+              "source": "0.0.0.0/0",
+              "tcp": {
+                "port_min": 1024,
+                "port_max": 65535,
+                "source_port_min": 22,
+                "source_port_max": 22
+              }
+            },
+            {
+              "action": "allow",
+              "destination": "0.0.0.0/0",
+              "direction": "inbound",
+              "name": "allow-ssh-inbound",
+              "source": "0.0.0.0/0",
+              "tcp": {
+                "port_min": 22,
+                "port_max": 22,
+                "source_port_min": 1024,
+                "source_port_max": 65535
+              }
+            }                          
+          ]
+        },
+        {
+          "add_cluster_rules": false,
+          "name": "management-c2svpn-acl",
+          "rules": [
+            {
+              "action": "allow",
+              "destination": "0.0.0.0/0",
+              "direction": "inbound",
+              "name": "allow-udp-vpn-inbound",
+              "source": "0.0.0.0/0",
+              "udp": {
+                "port_min": 443,
+                "port_max": 443,
+                "source_port_min": 1024,
+                "source_port_max": 65535
+              }
+            },
+            {
+              "action": "allow",
+              "destination": "10.0.0.0/8",
+              "direction": "inbound",
+              "name": "allow-all-cse-inbound",
+              "source": "161.26.0.0/16"
+            },
+            {
+              "action": "allow",
+              "destination": "10.0.0.0/8",
+              "direction": "inbound",
+              "name": "allow-cloud-services-inbound",
+              "source": "166.9.0.0/16"
+            },
+            {
+              "action": "allow",
+              "destination": "10.0.0.0/8",
+              "direction": "inbound",
+              "name": "allow-all-vpc-inbound",
+              "source": "10.0.0.0/8"
+            },
+            {
+              "action": "allow",
+              "destination": "0.0.0.0/0",
+              "direction": "outbound",
+              "name": "allow-udp-vpn-resp-outbound",
+              "source": "0.0.0.0/0",
+              "udp": {
+                "port_min": 1024,
+                "port_max": 65535,
+                "source_port_min": 443,
+                "source_port_max": 443
+              }
+            },
+            {
+              "action": "allow",
+              "destination": "10.0.0.0/8",
+              "direction": "outbound",
+              "name": "allow-all-vpc-outbound",
+              "source": "10.0.0.0/8"
+            },
+            {
+              "action": "allow",
+              "destination": "161.26.0.0/16",
+              "direction": "outbound",
+              "name": "allow-all-cse-outbound",
+              "source": "10.0.0.0/8"
+            },
+            {
+              "action": "allow",
+              "destination": "166.9.0.0/16",
+              "direction": "outbound",
+              "name": "allow-cloud-services-outbound",
+              "source": "10.0.0.0/8"
+            }
+          ]
+        }
+      ],
+      "prefix": "management",
+      "resource_group": "lab02-management-rg",
+      "subnets": {
+        "zone-1": [
+          {
+            "acl_name": "management-acl",
+            "cidr": "10.21.10.0/24",
+            "name": "vsi-zone-1",
+            "public_gateway": null
+          },
+          {
+            "acl_name": "management-acl",
+            "cidr": "10.21.20.0/24",
+            "name": "vpe-zone-1",
+            "public_gateway": null
+          },
+          {
+            "acl_name": "management-bastion-acl",
+            "cidr": "10.21.30.0/24",
+            "name": "bastion-zone-1",
+            "public_gateway": null
+          },
+          {
+            "acl_name": "management-c2svpn-acl",
+            "cidr": "10.21.40.0/24",
+            "name": "vpn-zone-1",
+            "public_gateway": null
+          }
+        ],
+        "zone-2": [
+          {
+            "acl_name": "management-acl",
+            "cidr": "10.21.11.0/24",
+            "name": "vsi-zone-2",
+            "public_gateway": null
+          },
+          {
+            "acl_name": "management-acl",
+            "cidr": "10.21.21.0/24",
+            "name": "vpe-zone-2",
+            "public_gateway": null
+          }
+        ],
+        "zone-3": []
+      },
+      "use_public_gateways": {
+        "zone-1": false,
+        "zone-2": false,
+        "zone-3": false
+      }
+    },
+    {
+      "address_prefixes": {
+        "zone-1": [],
+        "zone-2": [],
+        "zone-3": []
+      },
+      "clean_default_sg_acl": true,
+      "flow_logs_bucket_name": "workload-flowlogs",
+      "default_network_acl_name": "lab02-workload-default-acl",
+      "default_security_group_name": "lab02-workload-default-sg",
+      "default_security_group_rules": [],
+      "network_acls": [
+        {
+          "add_cluster_rules": false,
+          "name": "workload-acl",
+          "rules": [
+            {
+                  "action": "allow",
+                  "destination": "0.0.0.0/0",
+                  "direction": "inbound",
+                  "name": "allow-https-outbound-response",
+                  "source": "0.0.0.0/0",
+                  "tcp": {
+                    "port_min": 1024,
+                    "port_max": 65535,
+                    "source_port_min": 443,
+                    "source_port_max": 443
+                  }
+            },            
+            {
+              "action": "allow",
+              "destination": "10.0.0.0/8",
+              "direction": "inbound",
+              "name": "allow-all-cse-inbound",
+              "source": "161.26.0.0/16"
+            },
+            {
+              "action": "allow",
+              "destination": "10.0.0.0/8",
+              "direction": "inbound",
+              "name": "allow-cloud-services-inbound",
+              "source": "166.9.0.0/16"
+            },
+            {
+              "action": "allow",
+              "destination": "10.0.0.0/8",
+              "direction": "inbound",
+              "name": "allow-all-vpc-inbound",
+              "source": "10.0.0.0/8"
+            },
+            {
+              "action": "allow",
+              "destination": "10.0.0.0/8",
+              "direction": "outbound",
+              "name": "allow-all-vpc-outbound",
+              "source": "10.0.0.0/8"
+            },
+            {
+              "action": "allow",
+              "destination": "0.0.0.0/0",
+              "direction": "outbound",
+              "name": "allow-https-outbound",
+              "source": "0.0.0.0/0",
+              "tcp": {
+                "port_min": 443,
+                "port_max": 443,
+                "source_port_min": 1024,
+                "source_port_max": 65535
+              }
+            },              
+            {
+              "action": "allow",
+              "destination": "161.26.0.0/16",
+              "direction": "outbound",
+              "name": "allow-all-cse-outbound",
+              "source": "10.0.0.0/8"
+            },
+            {
+              "action": "allow",
+              "destination": "166.9.0.0/16",
+              "direction": "outbound",
+              "name": "allow-cloud-services-outbound",
+              "source": "10.0.0.0/8"
+            }          
+          ]
+        }
+      ],
+      "prefix": "workload",
+      "resource_group": "lab02-workload-rg",
+      "subnets": {
+        "zone-1": [
+          {
+            "acl_name": "workload-acl",
+            "cidr": "10.31.10.0/24",
+            "name": "vsi-zone-1",
+            "public_gateway": true
+          },
+          {
+            "acl_name": "workload-acl",
+            "cidr": "10.31.20.0/24",
+            "name": "vpe-zone-1",
+            "public_gateway": null
+          }
+        ],
+        "zone-2": [
+          {
+            "acl_name": "workload-acl",
+            "cidr": "10.31.11.0/24",
+            "name": "vsi-zone-2",
+            "public_gateway": true
+          },
+          {
+            "acl_name": "workload-acl",
+            "cidr": "10.31.21.0/24",
+            "name": "vpe-zone-2",
+            "public_gateway": null
+          }
+        ],
+        "zone-3": []
+      },
+      "use_public_gateways": {
+        "zone-1": true,
+        "zone-2": true,
+        "zone-3": false
+      }
+    }
+  ],
+  "vpn_gateways": [
+      {
+          "name": "mgmt-gateway-zone-1",
+          "resource_group": "lab02-management-rg",
+          "subnet_name": "vpn-zone-1",
+          "vpc_name": "management",
+          "mode": "policy"
+      }
+  ],    
+  "vsi": [
+    {
+      "boot_volume_encryption_key_name": "lab02-slz-key",
+      "image_name": "ibm-ubuntu-24-04-3-minimal-amd64-1",
+      "machine_type": "cx2-2x4",
+      "name": "management-ssh-jump",
+      "resource_group": "lab02-management-rg",
+      "security_groups": [
+        "lab02-management-bastion"
+      ],
+      "enable_floating_ip": true,
+      "ssh_keys": [
+        "ssh-key"
+      ],
+      "subnet_names": [
+        "bastion-zone-1"
+      ],
+      "vpc_name": "management",
+      "vsi_per_subnet": 1
+    },
+    {
+      "boot_volume_encryption_key_name": "lab02-slz-key",
+      "image_name": "ibm-redhat-9-6-minimal-amd64-3",
+      "machine_type": "cx2-2x4",
+      "name": "workload-app-node",
+      "resource_group": "lab02-workload-rg",
+      "security_groups": [
+        "lab02-workload-vsi"
+      ],
+      "enable_floating_ip": false,
+      "ssh_keys": [
+        "ssh-key"
+      ],
+      "subnet_names": [
+        "vsi-zone-1",
+        "vsi-zone-2"
+      ],
+      "block_storage_volumes": [
+        {
+          "name": "app-packages",
+          "profile": "general-purpose",
+          "capacity": 10,
+          "encryption_key": "lab02-slz-key"
+        },
+        {
+          "name": "app-data",
+          "profile": "5iops-tier",
+          "capacity": 10,
+          "encryption_key": "lab02-slz-key"
+        }
+      ],
+      "vpc_name": "workload",
+      "vsi_per_subnet": 1
+    }
+  ]
+}

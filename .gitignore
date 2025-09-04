@@ -1,0 +1,20 @@
+# Logs and databases #
+######################
+*.log
+*.sql
+*.sqlite
+
+# IDE-specific settings (not critical to share)
+.settings/
+.vscode/*
+# !.vscode/*.json
+
+# OS generated files #
+######################
+.DS_Store
+.DS_Store?
+._*
+.Trashes
+ehthumbs.db
+Thumbs.db
+**/*~
