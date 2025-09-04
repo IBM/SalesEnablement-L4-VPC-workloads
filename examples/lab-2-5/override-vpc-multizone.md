@@ -28,7 +28,7 @@ The example also creates the minimum encryption and audit infrastructure:
 <details>
 <summary>Deployed landing zone diagram</summary>
 
-![lab02-diagram]da-override-starter/landing-zone-starter-diagram.png)
+![lab02-diagram](landing-zone-starter-diagram.png)
   
 </details>
 
